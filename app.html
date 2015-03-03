@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Proyecto final</title>
+	<link rel="stylesheet" href="css/foundation.min.css" />
+	<style>
+	.no-space th{
+		padding: 0;
+	}
+
+	.no-space th input{
+		margin: 0;
+	}
+
+	.ocultar{
+		display: none;
+	}
+	</style>
+	<script src="js/vendor/modernizr.js"></script>
+</head>
+<body>
+	
+	<div class="row">
+		<div class="large-12 columns">
+			<h1 class="text-center">Simulador URM</h1>
+		</div>
+	</div>
+	<div class="row">
+		<div class="large-7 columns">
+			<h4 class="text-center">Instrucciones</h4>
+			<hr>
+			<div class="row">
+				<div class="large-6 columns large-centered">
+					<ul class="radius button-group">
+						<li><a href="#" class="button add-button tiny" data-button="J">J</a></li>
+						<li><a href="#" class="button add-button tiny" data-button="Z">Z</a></li>
+						<li><a href="#" class="button add-button tiny" data-button="T">T</a></li>
+						<li><a href="#" class="button add-button tiny" data-button="S">S</a></li>
+					</ul>
+				</div>
+
+				<div class="large-6 columns large-centered">
+					<form class="instrucciones" action="">	
+						<div class="instrucciones__formularios">
+							
+						</div>
+						<a href="#" class="button expand instrucciones__submit">Procesar</a>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<div class="large-5 columns">
+			<h4 class="text-center">Registros</h4>
+			<hr>
+			<div class="row">
+				<div class="large-12 columns">
+					<table>
+						<tr class="no-space">
+							<th><input class="R1" type="text" value="0"></th>
+							<th><input class="R2" type="text" value="0"></th>
+							<th><input class="R3" type="text" value="0"></th>
+							<th><input class="R4" type="text" value="0"></th>
+							<th><input class="R5" type="text" value="0"></th>
+							<th><input class="R6" type="text" value="0"></th>
+							<th><input class="R7" type="text" value="0"></th>
+							<th><input class="R8" type="text" value="0"></th>
+							<th><input class="R9" type="text" value="0"></th>
+							<th><input class="R10" type="text" value="0"></th>
+						</tr>
+					</table>
+					<table class="registros">
+						<thead>
+							<tr>
+								<th>R1</th>
+								<th>R2</th>
+								<th>R3</th>
+								<th>R4</th>
+								<th>R5</th>
+								<th>R6</th>
+								<th>R7</th>
+								<th>R8</th>
+								<th>R9</th>
+								<th>R10</th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+
+					</table>
+
+				</div>
+			</div>
+		</div>
+
+		
+		<form name="form1" class="hide">
+			<textarea id="entrada" name="progtext" rows="16" cols="40" onChange="form1.continueButton.disabled=true" class="hide"></textarea>
+			<input class="ocultar" id="registros" type="text" name="registerValues" >
+			<textarea id="resultados" name="progoutput" rows="30" name="prog" cols="30" class="hide"></textarea>
+		</form>
+	</div>
+
+	<script src="js/vendor/jquery.js"></script>
+	<script src="js/operaciones.js"></script>
+	<script>
+
+		$(document).ready(function(){
+
+			var inputSize = 1;
+
+			$('.add-button').click(function(e){
+				e.preventDefault()
+				var tipo = $(this).data('button');
+				var html = '';
+
+				html += '<div class="instruction row collapse prefix-radius">'
+				html += '		<div class="small-3 columns">'
+				html += '			<span class="prefix">'+inputSize+'- '+ tipo +'</span>'
+				html += '		</div>'
+				html += '		<div class="small-9 columns">'
+				html += '			<input type="text" class="entrada entrada'+ inputSize +'" data-operacion="'+ tipo +'">'
+				html += '		</div>'
+				html += '</div>'
+
+
+				inputSize++;
+				$('.instrucciones__formularios').append(html);
+			})
+
+			$('.instrucciones__submit').click(function(){
+				procesarIntrucciones();				
+			})
+
+			function procesarIntrucciones(){
+
+				var texto = ''
+				for(var j = 1; j < inputSize; j++){
+					var inputValue = $(".entrada"+j).val();
+					texto += ':'+$('.entrada'+j).data('operacion')+'('
+						texto += inputValue
+						texto += ')'
+					if (j != inputSize - 1) {
+					texto += '\n'
+				}
+			}
+
+			$('#entrada').val(texto)
+				procesarRegistros();
+			}
+
+			function procesarRegistros(){
+				var text = ""
+				for(var j = 1; j<= 10; j++){
+					var inputValue = $(".R"+j).val();
+					if (j < 10) {
+						text += inputValue + ","
+					}
+					else{
+						text += inputValue
+					}
+				}
+
+				$("#registros").val(text)
+
+				initializeVars(); 
+				runSim();
+			}
+		})
+
+	</script>	
+
+</body>
+
+</html>
