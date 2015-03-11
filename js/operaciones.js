@@ -1,46 +1,17 @@
-var outStr; // to be written to the output text box
-var LINE_INDICATOR = ":" ;
-var R = new Array(); // holds Register values
-var curLine; // current number line in main for loop
-var stopWin; // ref to child window for interrupting program
-var totInstructions; // holds total # of performed instructions
-
-/*function makeStopWindow(){
-	// Open a new window that allows user to stop program in original window
-
-	var tempstr;
-	tempstr='<html><head><title></title></head>';
-	tempstr+='<body><form name="form2">';
-	tempstr+='<input type="button" ';
-	tempstr+='value="Interrupt program" onClick="form2.stopRequest.value=';
-	tempstr+="'yes'";
-	tempstr+=' ;" >';
-	//	tempstr+="<br>This window closes automatically. Closing it manually stops the program.";
-	tempstr+='<input type="hidden" name="stopRequest" value="no">';
-	tempstr+='</form></body></html>';
-
-	if(stopWin!=null) stopWin.close();
-	
-	stopWin = window.open("","","width=180,height=30,resizable");
-	stopWin.document.write(tempstr);
-	stopWin.document.close();
-
-}*/
+var cadenaSalida; // 
+var separadorLinea = ":" ;
+var R = new Array(); // Valores de registro
+var lineaActual; // current number line in main for loop
+var totInstrucciones; // holds total # of performed instructions
 
 function initializeVars(){
 
-	// resets all registers to null
-	// in preparation for runSim()
-	// This function is called by the Run button,
-	// and not by the Continue button.
-
 	var temp = new Array();
 	R = temp;
-	outStr="";
+	cadenaSalida="";
 	recordRegisterVals(R);
-	//form1.continueButton.disabled=true;
-	curLine=1;
-	totInstructions=0;
+	lineaActual=1;
+	totInstrucciones=0;
 	$('.registros tbody').html('')
 
 	return;
@@ -49,36 +20,33 @@ function initializeVars(){
 
 function recordRegisterVals(arr){
 
-	// Record numbers from form1.registerValues.value into arr
-	// register values assumed to be comma-separated
-	// arr[0] not used
-	// record actions in outStr
+	// Valores del registro
 
 	var str= form1.registerValues.value;
-	var len; // holds length of str
-	var r; // index for arr
+	var len; // tamaño de cadena
+	var r; // indice
 	var i,j,temp;
 	
 	if(str=="") return;
-	//	outStr += "Input: "
-	str=removeSpaces(str);
-	str+="," // adhoc: so slice will work for last value
+	//	cadenaSalida += "Input: "
+	str=quitarEspacios(str);
+	str+="," // ultimo valor
 	len=str.length;
 	
 	for(i=0,r=1; i<len; ){
 		if(isNaN(str.charAt(i))){
-			alert("Error in Initial register values: " + "non-digit found where digit expected.")
+			alert("Error en registros iniciales: ")
 			return;
 		}
 
-		j=findNextNonDigit(str,i);
+		j=siguienteNoDigito(str,i);
 		arr[r]=temp=Number(str.slice(i,j)); // record register value
-		//		outStr += "R" + r + "=" + temp + "; "
+		//		cadenaSalida += "R" + r + "=" + temp + "; "
 		r++;
 		i=j+1; // set i to one after the comma
 	}
 
-	//	outStr += "\n\n"
+	//	cadenaSalida += "\n\n"
 
 }
 
@@ -86,9 +54,8 @@ function runSim() {
 	// runs the simulation
 
 	var lines = new Array();
-	var nlines; // number of lines in program
+	var nlines; // lineas totales
 	var progStr=form1.progtext.value +")";
-	// adhoc: add ) for progStr.slice to work in case last ) is missing
 	var r, r2; // hold register numbers
 	var curPos; // holds current position being read in progStr
 	var nextPos; // temporarily holds next value of curPos
@@ -98,93 +65,89 @@ function runSim() {
 	var progEnded=false; // is set to true if prog reaches end
 
 	if( (maxRun=getMaxRun() ) == -2) return;
-	progStr=removeSpaces(progStr);
+	progStr=quitarEspacios(progStr);
 	progStr=progStr.toUpperCase();
 	nlines=findLines(lines,progStr);
 	if(nlines==0){
 		alert("No readable program lines were found.");
 		return;			}
 
-	//makeStopWindow();
 
 	for(nInstructions=0; maxRun==-1 || nInstructions < maxRun; nInstructions++){
-		/*if(stopWin.form2.stopRequest.value=="yes"){
-			break;
-		}*/
-		if(curLine > nlines || curLine==0){
+
+		if(lineaActual > nlines || lineaActual==0){
 			progEnded=true;
-			//form1.continueButton.disabled=true;
-			outStr += "Stop";
+			cadenaSalida += "Stop";
 			break;
 		}
 
-		curPos=lines[curLine];
+		curPos=lines[lineaActual];
 		if(progStr.charAt(curPos)=="Z"){
 			if(progStr.charAt(++curPos)!="("){
-				alert("Error in instruction " + curLine + ":\n Z must be followed by (")
+				alert("Error in instruction " + lineaActual + ":\n Z must be followed by (")
 					break;
 				}
 
 			curPos++; // skip the (
 
 				if(isNaN(progStr.charAt(curPos))){
-					alert("Error in instruction " + curLine + 
+					alert("Error in instruction " + lineaActual + 
 						":\n non-digit found where digit expected.")
 					break;
 				}
-				nextPos = findNextNonDigit(progStr,curPos);
+				nextPos = siguienteNoDigito(progStr,curPos);
 		r=Number(progStr.slice(curPos,nextPos)); // the register number
 		R[r]=0; // set register r to 0
-		if(showRegs) outStr += curLine + ":R" + r + "=" + R[r] + "\n";
-		++curLine;
+		if(showRegs) cadenaSalida += lineaActual + ":R" + r + "=" + R[r] + "\n";
+		++lineaActual;
 	}
 
 	else if(progStr.charAt(curPos)=="S"){
 
 		if(progStr.charAt(++curPos)!="("){
-			alert("Error in instruction " + curLine + ":\n S must be followed by (")
+			alert("Error in instruction " + lineaActual + ":\n S must be followed by (")
 			break;
 		}
 		curPos++; // skip the (
 		if(isNaN(progStr.charAt(curPos))){
-			alert("Error in instruction " + curLine + ":\n non-digit found where digit expected.")
+			alert("Error in instruction " + lineaActual + ":\n non-digit found where digit expected.")
 			break;
 		}
 		
-		nextPos = findNextNonDigit(progStr,curPos);
+		nextPos = siguienteNoDigito(progStr,curPos);
 		r=Number(progStr.slice(curPos,nextPos)); // the register number
 		if(R[r]==null) R[r]=0; // if not set yet, set to zero
 		
 		R[r]+=1; // increment register r
 		
-		if(showRegs) outStr += curLine + ":R" + r + "=" + R[r] + "\n";
+		if(showRegs) cadenaSalida += lineaActual + ":R" + r + "=" + R[r] + "\n";
 		
-		++curLine;
+		++lineaActual;
 	}
 
 	else if(progStr.charAt(curPos)=="T"){
 
 		if(progStr.charAt(++curPos)!="("){
-			alert("Error in instruction " + curLine + ":\n T must be followed by (")
+			alert("Error in instruction " + lineaActual + ":\n T must be followed by (")
 			break;
 		}
 		curPos++; // skip the (
 		if(isNaN(progStr.charAt(curPos))){
-			alert("Error in instruction " + curLine + ":\n non-digit found where digit expected.")
+			alert("Error in instruction " + lineaActual + ":\n non-digit found where digit expected.")
 			break;
 		}
 
-		nextPos = findNextNonDigit(progStr,curPos);
+		nextPos = siguienteNoDigito(progStr,curPos);
 		r=Number(progStr.slice(curPos,nextPos)); // the register number
 		curPos=nextPos;
 		
 		if(progStr.charAt(curPos)!=","){
-			alert("Error in instruction " + curLine + ":\n comma expected after first register number")
+			alert("Error in instruction " + lineaActual + ":\n comma expected after first register number")
 			break;
 		}
 		
 		curPos++; // skip the comma
-		nextPos = findNextNonDigit(progStr,curPos);
+		nextPos = siguienteNoDigito(progStr,curPos);
 		
 		r2=Number(progStr.slice(curPos,nextPos)); // the second register number
 		
@@ -193,60 +156,60 @@ function runSim() {
 		
 		R[r2]=R[r]; // set register r2 equal to register r
 		
-		if(showRegs) outStr += curLine + ":R" + r2 + "=" + R[r2] + "\n";
+		if(showRegs) cadenaSalida += lineaActual + ":R" + r2 + "=" + R[r2] + "\n";
 		
-		++curLine;
+		++lineaActual;
 	}
 
 	else if(progStr.charAt(curPos)=="J"){
 		if(progStr.charAt(++curPos)!="("){
-			alert("Error in instruction " + curLine + ":\n J must be followed by (")
+			alert("Error in instruction " + lineaActual + ":\n J must be followed by (")
 			break;
 		}
 	
 		curPos++; // skip the (
 	
 		if(isNaN(progStr.charAt(curPos))){
-			alert("Error in instruction " + curLine + ":\n non-digit found where digit expected.")
+			alert("Error in instruction " + lineaActual + ":\n non-digit found where digit expected.")
 			break;
 		}
 
-		nextPos = findNextNonDigit(progStr,curPos);
+		nextPos = siguienteNoDigito(progStr,curPos);
 		r=Number(progStr.slice(curPos,nextPos)); // the register number
 
 		curPos=nextPos;
 		if(progStr.charAt(curPos)!=","){
-			alert("Error in instruction " + curLine + ":\n comma expected after first register number")
+			alert("Error in instruction " + lineaActual + ":\n comma expected after first register number")
 			break;
 		}
 		
 		curPos++; // skip the comma
-		nextPos = findNextNonDigit(progStr,curPos);
+		nextPos = siguienteNoDigito(progStr,curPos);
 		r2=Number(progStr.slice(curPos,nextPos)); // the second register number
 
 		if(R[r]==null) R[r]=0; // if not set yet, set to zero
 		if(R[r2]==null) R[r2]=0; // if not set yet, set to zero
 		if(R[r2]!=R[r]){ // jump condition not satisfied
-			if(showRegs) outStr += curLine + ":No jump\n";
-			++curLine;
+			if(showRegs) cadenaSalida += lineaActual + ":No jump\n";
+			++lineaActual;
 			continue;
 		}
 		
 		curPos=nextPos;
 		if(progStr.charAt(curPos)!=","){
-			alert("Error in instruction " + curLine + ":\n comma expected after first register number")
+			alert("Error in instruction " + lineaActual + ":\n comma expected after first register number")
 			break;
 		}
 		
 		curPos++; // skip the comma
-		nextPos = findNextNonDigit(progStr,curPos);
+		nextPos = siguienteNoDigito(progStr,curPos);
 		nextLine=Number(progStr.slice(curPos,nextPos)); // the line number to jump to
-		if(showRegs) outStr += curLine + ":Jump to " + nextLine + "\n";
-			curLine=nextLine;
+		if(showRegs) cadenaSalida += lineaActual + ":Jump to " + nextLine + "\n";
+			lineaActual=nextLine;
 		}
 
 		else {
-			alert("Error in instruction " + curLine + ":\n Must use Z, S, T, or J.")
+			alert("Error in instruction " + lineaActual + ":\n Must use Z, S, T, or J.")
 			break;
 		}	
 
@@ -254,10 +217,7 @@ function runSim() {
 
 	} // end of main for loop
 	
-
-	//stopWin.close();
-
-	totInstructions += nInstructions; // update totInstructions
+	totInstrucciones += nInstructions; // update totInstrucciones
 
 	if(!progEnded){
 		// if end of program was not reached,
@@ -265,15 +225,15 @@ function runSim() {
 		//form1.continueButton.disabled=false;
 		alert("Did not reach end of program; "+
 			nInstructions + " instructions were performed during last run, " +
-			"totalling " + totInstructions + " so far.\n" +
+			"totalling " + totInstrucciones + " so far.\n" +
 			"To continue, click the Continue button.\n\n");
 	}
 	else{
 		if(R[1]==null) R[1]=0; // if R1 not set yet, set to zero
-		outStr = ("Output: R1="+R[1]+"\n\n" + "Performed " + totInstructions + "instructions:\n\n").concat(outStr); // prepend with output
+		cadenaSalida = ("Output: R1="+R[1]+"\n\n" + "Performed " + totInstrucciones + "instructions:\n\n").concat(cadenaSalida); // prepend with output
 	}
 	
-	form1.progoutput.value=outStr;
+	form1.progoutput.value=cadenaSalida;
 }
 
 function crearFila(){
@@ -311,7 +271,7 @@ function getMaxRun(){
 
 
 
-function removeSpaces(str){
+function quitarEspacios(str){
 
 	// Removes all spaces from str
 	// does not remove tabs or newlines
@@ -324,7 +284,7 @@ function removeSpaces(str){
 
 }
 
-function findNextNonDigit(str,beg){
+function siguienteNoDigito(str,beg){
 
 	// finds next non-digit character in str after beg
 	// Assumes there is a digit char at str[beg].
@@ -357,10 +317,10 @@ function findLines(lines,progStr){
 function findNextLine(str,pos){
 
 	// starts searching at current position pos
-	// until finds LINE_INDICATOR
+	// until finds separadorLinea
 	// then returns the position immediately after the found .
 
-	while(str.charAt(pos)!=LINE_INDICATOR){
+	while(str.charAt(pos)!=separadorLinea){
 		if(pos >= str.length) return(-1);
 		pos++;
 	}
